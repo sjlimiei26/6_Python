@@ -8,7 +8,9 @@ age = input("나이 입력: ")
 height = float(input("키 입력: "))
 
 print()
-print(f"이름: {name}, 성별: {gender}, 나이: {age}, 키: {height:.1f}cm")
+# print(f"이름: {name}, 성별: {gender}, 나이: {age}, 키: {height:.1f}cm")
+print(f"이름: {name}, 성별: {'남' if gender == 'M' else '여'}, 나이: {age}, 키: {height:.1f}cm")
+
 
 """
 ### 2. 소문자를 대문자로 변환하여 출력하는 프로그램
