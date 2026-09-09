@@ -41,7 +41,8 @@ message = 'No pain, No gain'
 
 #   문자열에서 고유한 문자만 추출 (중복된 문자는 제외)
 unique_char = {ch for ch in message}
-print(f"'{message}' 의 고유 문자: {unique_char}")
-
-unique_char = {ch for ch in message if ch != ',' and ch != ' '}
 print(f"'{message}' 의 고유 문자: {unique_char} / ({len(unique_char)})")
+
+# unique_char = {ch for ch in message if ch != ',' and ch != ' '}
+unique_char = {ch for ch in message if ch not in (',', ' ')}
+print(f"'{message}' 의 고유 문자 (특수문자 제거): {unique_char} / ({len(unique_char)})")
