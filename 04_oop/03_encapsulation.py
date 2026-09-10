@@ -26,3 +26,41 @@ print(f" _Account__balance : {acc._Account__balance}")
 # 네임맹글링 (name mangling)
 #   `__필드명` 형태의 변수는 `_클래스명__필드명` 형태로 변환되어 직접 접근 차단
 #   변환된 이름으로는 접근이 가능하지만, 사용을 권장하지는 않음!
+
+print("=" * 60)
+
+# @property : 메소드를 속성(필드)처럼 사용하게 해주는 데코레이터
+class SafeAccount:
+    def __init__(self, owner, balance = 0):
+        self.owner = owner
+        self.__balance = balance
+
+    # `__balance` 의 getter
+    @property
+    def balance(self):
+        """ getter """
+        return self.__balance
+
+    # `__balance` 의 setter
+    @balance.setter
+    def balance(self, value):
+        """ setter """
+        if value < 0:
+            self.__balance = 0
+            return
+
+        self.__balance = value
+
+    @property
+    def info(self):
+        return f"{self.owner} : {self.__balance:,}원"
+
+sa = SafeAccount("박기태", 500000)
+
+print(f"sa.balance : {sa.balance}")   # getter
+sa.balance = 1000000                  # setter
+print(f"sa.balance : {sa.balance}") 
+# sa.balance = -9999
+# print(f"sa.balance : {sa.balance}") 
+
+print(f"sa.info : {sa.info}")
