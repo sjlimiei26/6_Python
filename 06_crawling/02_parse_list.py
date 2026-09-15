@@ -2,7 +2,7 @@
     목록 파싱
 """
 
-import requests
+import requests, json, csv
 from bs4 import BeautifulSoup
 
 from config import BASE, TIMEOUT, HEADERS
@@ -32,3 +32,27 @@ for s in stocks:
     print(f"{s['code']:<8}{s['name']:<14}{s['sector']:<10}{s['price']:>12}{s['rate']:>9}")
 
 print("=" * 60)
+
+# 파일로 저장
+# - json
+# - csv => 상품명,가격,재고
+#          아이폰,3000000,20
+
+# json 저장하기
+def save_json(data, path):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+save_json(stocks, "stocks.json")
+# 경로를 따로 지정하지 않을 경우, 현재 터미널 위치에 저장됨 (실행하는 위치)
+
+# csv 저장하기
+def save_csv(data, path):
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=data[0].keys())
+        # fieldnames -> 컬럼 순서
+
+        writer.writeheader()        # csv 파일 맨 첫줄에 컬럼 이름들로 씀
+        writer.writerows(data)      # 딕셔너리 리스트 전체를 각각의 행으로 씀(기록)
+
+save_csv(stocks, "stocks.csv")
