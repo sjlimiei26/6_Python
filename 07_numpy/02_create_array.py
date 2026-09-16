@@ -3,6 +3,8 @@
 """
 import numpy as np
 
+from load_utils import load_one_stock
+
 print(f"리스트를 배열로 생성 : {np.array([1000, 3000, 4500])}")
 print(f"0으로 채워서 배열 생성: {np.zeros(5)}")  # float 타입으로 생성
 print(f"0으로 채워서 배열 생성: {np.zeros(5, dtype='int64')}")
@@ -40,3 +42,15 @@ for shape in [(4,), (4,1), (1,4)]:
     a = np.arange(4).reshape(shape)
 
     print(f" shape: {str(shape)} / ndim: {a.ndim} / {a}")
+
+print("=" * 60)
+
+# 첫 번째 종목의 데이터 불러오기
+prices = load_one_stock(0)
+
+print(f" 첫 종목의 750일 종가 ")
+print(f" 앞의 5개 데이터 : {prices[:5]}")
+print(f" shape : {prices.shape}")
+print(f" ndim : {prices.ndim}")
+print(f" size : {prices.size}")
+print(f" dtype : {prices.dtype}")
