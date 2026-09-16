@@ -101,3 +101,20 @@ def load_column(name):
     dtype = "float64" if name == "changeRate" else "int64"
 
     return _read(name, dtype).reshape(120, 750)
+
+_NAN_IDX = np.array([37, 88, 142, 199, 242, 301, 358, 412, 470, 537, 618, 703])
+_OUTLIER_IDX = np.array([33, 61, 215, 488, 724])
+_OUTLIER_SCALE = np.array([6.2, 5.4, 7.8, 5.9, 7.1])
+
+def load_dirty():
+    """
+        결측, 이상치용 데이터
+
+        첫 종목의 종가 데이터에 결측 12개, 이상치 5개
+    """
+
+    arr = load_one_stock(0).astype("float64")
+    arr[_NAN_IDX] = np.nan
+    arr[_OUTLIER_IDX] = arr[_OUTLIER_IDX] * _OUTLIER_SCALE
+
+    return arr, np.sort(_NAN_IDX), np.sort(_OUTLIER_IDX)
