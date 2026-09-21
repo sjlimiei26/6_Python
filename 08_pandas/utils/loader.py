@@ -33,7 +33,7 @@ def load_csv(dedup=True):
 
 def load_prices():
     """ prices.csv 파일 읽어서 DF 반환 """
-    return pd.read_csv(path('prices.csv'), encoding=ENCODING)
+    return pd.read_csv(path('prices.csv'), encoding=ENCODING, parse_dates=["date"])
 
 def load_companies(raw=False):
     """
