@@ -74,7 +74,32 @@ right = df.groupby('code')['close'].transform(lambda s: s.rolling(20).mean())
 
 edge = df.index[ df['code'] != df['code'].shift() ][1]
 for i in [edge-1, edge, edge+1]:
-    w = f"{wrong[idx]:,.0f}" if pd.notna(wrong[idx]) else "NaN"
-    r = f"{right[idx]:,.0f}" if pd.notna(right[idx]) else "NaN"
+    w = f"{wrong[i]:,.0f}" if pd.notna(wrong[i]) else "NaN"
+    r = f"{right[i]:,.0f}" if pd.notna(right[i]) else "NaN"
 
-    # 출력부터 시작--
+    print(f" {i:<8} {df.loc[i, 'code']:<9} {df.loc[i, 'close']:>10,} {w:>20} {r:>20}")
+
+"""
+    groupby 없이 계산하면 (wrong) 종목별 코드가 달라도 이평선 재계산없이 이어지는 형태도 계산됨
+    그룹화를 해줘야 종목별 20일 이평선이 정상적으로 계산됨
+
+    diff, shift, rolling... 모두 groupby가 필요함!
+"""
+print("=" * 60)
+
+# 변화율 계산
+#   pct_change : 바로 위행대비 비율 변화
+#   cumprod : 누적곱
+#      s.cumprod() => s[0], s[0]*s[1], s[0]*s[1]*s[2], ...
+
+df['ret'] = df.groupby('code')['close'].transform(lambda s: s.pct_change())
+
+sample = df[df['code'] == 'G0001'].head(4)
+for _, r in sample.iterrows():
+    ret = f"{r['ret']:.4f}" if pd.notna(r['ret']) else 'NaN'
+    print(f"{r['date'].date()} {r['close']:,} {ret}")
+
+# 누적 수익률 
+#  => 첫 날의 NaN을 0으로 채우고, (1+수익률)을 차례로 곱하기
+cum = (1+df[df['code'] == 'G0001']['ret'].fillna(0)).cumprod().iloc[-1]
+print(f"G0001 종목의 누적 수익률: {(cum - 1) * 100:.1f}%")
