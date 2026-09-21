@@ -17,3 +17,8 @@
 ```bash
 > pip install 모듈명
 ```
+- 모듈 참고
+  - `06_crawling/` : requirements.txt 파일 참고
+  - `07_numpy/` : numpy
+  - `08_pandas/` : pandas
+  - `09_visualizations/` : matplotlib, seaborn
