@@ -36,3 +36,18 @@ ax.set_ylabel("종가(원)")
 ax.grid(alpha=0.3)
 
 fig.savefig(out('01_basic.png'))
+# plt.show()
+# => 화면에 띄워서 바로 차트를 확인
+#    savefig()와 show() 같이 사용하는 경우, savefig() 호출 후 show() 호출해야 함!
+
+fig, ax = plt.subplots(figsize=(10, 3))
+
+ax.plot(one["date"].iloc[:60], one['changeRate'].iloc[:60], marker=".")
+# * marker="." : 각 데이터 지점에 작은 점이 표시됨
+
+ax.axhline(0, color="gray", lw=0.8)
+# axhline(y) : y 위치에 가로 기준선을 표시. lw - 선 굵기
+ax.set_title("가온전자 일간 등락률")
+ax.set_ylabel("등락률(%)")
+
+fig.savefig(out('02_minus.png'), dpi=120)
