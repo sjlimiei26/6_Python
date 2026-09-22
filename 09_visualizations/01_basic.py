@@ -51,3 +51,37 @@ ax.set_title("가온전자 일간 등락률")
 ax.set_ylabel("등락률(%)")
 
 fig.savefig(out('02_minus.png'), dpi=120)
+
+plt.close(fig)
+
+"""
+    * 필수 설정 항목 (최소한 이것들을 설정하자!)
+
+    ax.set_title("그래프 제목")
+    ax.set_xlabel("x축 제목")
+    ax.set_ylabel("y축 제목")
+    ax.grid(alpha=0.3)   # 그리드 표시
+    ax.legend()          # 범례 표시
+"""
+
+# 그래프 여러 개 표시
+codes = ["G0001", "G0002", "G0003", "G0004"]
+
+fig, axes = plt.subplots(2, 2, figsize=(13,6), sharex=True)
+# * plt.subplots(2,2)  : 그래프를 2행 2열 총 4개를 표시
+#   axes -> (2,2) 배열로 반환
+# * sharex : x축을 모두 공유하겠음!
+
+for ax, code in zip(axes.flat, codes):
+    # axes.flat : 2차원 배열을 1차원으로 펼쳐줌
+    data = df[df["code"] == code].sort_values("date")
+
+    ax.plot(data["date"], data["close"], lw=1)
+    ax.set_title(f"{data['name'].iloc[0]} ({code})", fontsize=10)
+    ax.grid(alpha=0.3)
+
+fig.suptitle("종목별 주가 추이")
+fig.tight_layout()    # 제목, 라벨이 서로 겹치지 않게 자동으로 여백 계산
+
+fig.savefig(out("03_subplots.png"), dpi=120)
+plt.close(fig)
