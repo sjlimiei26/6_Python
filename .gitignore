@@ -6,3 +6,6 @@ __pycache__
 _sample*
 stocks.*
 *.pkl
+
+# 환경 변수 파일
+.env
