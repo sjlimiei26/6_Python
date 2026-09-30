@@ -111,3 +111,42 @@ with conn.cursor() as cur:
     원본 테이블은 데이터를 그대로 저장하는 것이 목적이고, 
     결측 또는 이상치 등은 정제 단계에서 판단해야 함!
 """
+# =====================================================
+
+CLEAN_DDL = """
+    CREATE TABLE daily_price (
+        id      NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        code    VARCHAR2(20)    NOT NULL,
+        "date"  DATE            NOT NULL,
+        open    NUMBER(20),
+        high    NUMBER(20),
+        low     NUMBER(20),
+        close   NUMBER(20),
+        volume  NUMBER(20),
+        "change" NUMBER(20),
+        changeRate  NUMBER(6, 2),
+        -- 수집 시간이나 출처 등 따로 필요한 정보는 자유롭게 추가
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT uk_code_date UNIQUE (code, "date")
+    )
+"""
+
+with conn.cursor() as cur:
+    drop_table(cur, "daily_price")
+    cur.execute(CLEAN_DDL)
+
+print("=== daily_price 테이블 생성 완료 ===")
+
+"""
+    - 금액: 실수 타입 금지 - 부동소수점(float). 오차가 누적될 수 있음! NUMBER 사용
+    - 비율: NUMBER(6,2) => 자릿수 고정. 오차를 줄일 수 있음!
+    - 날짜: DATE => 문자열 저장하게 되면, 날짜 계산이나 정렬이 어려워질 수 있음
+    - 코드: VARCHAR2 => 0부터 시작하는 값인 경우 0을 보존하기 위함
+"""
+
+with conn.cursor() as cur:
+    for t in ["demo_strict"]:
+        drop_table(cur, t)
+conn.close()
+
+print("**** 테이블 정리 완료 ****")
