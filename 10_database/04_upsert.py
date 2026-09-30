@@ -190,3 +190,49 @@ print(f"   입력    {len(rows)}행")
 print(f"   신규    {a2}행")
 print(f"   갱신    {u2}행")
 print(f"   시간    {t2:.2f}")
+
+"""
+    기록(로그, 출력)을 남기는 것은 중요함!
+    재실행 시 전부 갱신으로 확인되면 멱등하게 동작했다고 볼 수 있음!
+             전부 신규로 확인되면.. 중복데이터가 쌓이고 있다고 볼 수 있음!
+    위 데이터 기준으로 2회차 실행 시 신규 0, 갱신 (데이터길이)으로 확인된 것은 정상적임!
+"""
+# =====================================================
+print('=' * 60)
+
+expected = sample
+actual = pd.read_sql(f"SELECT {COL_SQL} FROM t_stats", engine)
+
+# print(actual.head())
+
+checks = [
+    ("행 수", len(expected), len(actual)),
+    ("종목 수", expected["code"].nunique(), actual["code"].nunique()),
+    ("종가 합계", expected["close"].sum(), actual["close"].sum()),
+    ("종가 평균", expected["close"].mean(), actual["close"].mean()),
+    ("거래량 합계", expected["volume"].sum(), actual["volume"].sum()),
+    ("최소 날짜", expected["date"].min().date(), actual["date"].min().date()),
+    ("최대 날짜", expected["date"].max().date(), actual["date"].max().date()),
+]
+
+all_ok = True
+for name, exp, act in checks:
+    ok = str(exp) == str(act)
+    all_ok &= ok
+    print(f" {name:<14}{str(exp):>20}{str(act):>20} {'O' if ok else 'X'}")
+
+print(f"모든 항목 일치 : {all_ok}")
+
+# 테스트 테이블 삭제
+def drop_table(cur, name):
+    """ 전달된 테이블을 삭제하는 함수 """
+    try:
+        cur.execute(f"DROP TABLE {name}")
+    except Exception as e:
+        if "ORA-00942" not in str(e):
+            pass
+
+with conn.cursor() as cur:
+    for t in ["t_noconstraint", "t_unique", "t_upsert", "t_stats"]:
+        drop_table(cur, t)
+conn.close()
