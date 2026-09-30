@@ -16,7 +16,7 @@ cols = ["code","date","open","high","low","close","volume","change","changeRate"
 sample = df.head(N)[cols].copy()   # 2000개 데이터 복제
 
 # rows 변수에 df -> list(tuple) 변환하여 저장
-rows = [tuple(c) for c in sample.itertuples()]
+rows = [tuple(c) for c in sample.itertuples(index=False)]
 
 def quote(c):
     return f'"{c}"' if c in ("date", "change", "changeRate") else c
@@ -40,7 +40,7 @@ def make_table(name, unique=False):
     with conn.cursor() as cur:
         drop_table(cur, name)
 
-        uk = ', CONSTRAINT uk_code_date UNIQUE (code, "date")' if unique else ''
+        uk = ', UNIQUE (code, "date")' if unique else ''
         cur.execute(f"""
             CREATE TABLE {name} (
                 id      NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -83,5 +83,110 @@ UPSERT = f"""
                    dst."change" = src."change", dst."changeRate" = src."changeRate"
     WHEN NOT MATCHED THEN
         INSERT ({COL_SQL})
-        VALUES (src.code, src."date", src.open, src.high, src.low, src.close, src.volume, src."change", src."chageRate")
+        VALUES (src.code, src."date", src.open, src.high, src.low, src.close, src.volume, src."change", src."changeRate")
 """
+
+# ==============================================
+cases = []
+
+# 1. 유니크 제약 없이 실행
+make_table("t_noconstraint", unique=False)
+
+for i in (1,2):     # 두번 반복하기 위해 작성
+    with conn.cursor() as cur:
+        cur.executemany(PLAIN.format(t="t_noconstraint"), rows)
+    conn.commit()
+
+n1 = count("t_noconstraint")
+# print(f"CASE 1. 제약조건없이 실행 : {n1} 행 추가")
+
+cases.append(("CASE 1. 제약조건없이 INSERT", "성공", n1, "데이터가 두배"))
+
+
+# 2. 제약조건 설정(unique), INSERT 반복
+make_table("t_unique", unique=True)
+
+with conn.cursor() as cur:
+    cur.executemany(PLAIN.format(t="t_unique"), rows)
+conn.commit()
+
+try:
+    with conn.cursor() as cur:
+        cur.executemany(PLAIN.format(t="t_unique"), rows)
+    conn.commit()
+    r2 = "성공"
+except Exception as e:
+    conn.rollback()
+    r2 = type(e).__name__
+
+n2 = count("t_unique")
+cases.append(("CASE 2. 제약조건 설정 + INSERT", r2, n2, "두번째 실행 시 오류 발생!"))
+
+
+# 3. 제약 조건 설정(unique) + UPSERT (MERGE INTO)
+make_table("t_upsert", unique=True)
+
+for i in (1,2):
+    with conn.cursor() as cur:
+        cur.executemany(UPSERT.format(t="t_upsert"), rows)
+    conn.commit()
+n3 = count("t_upsert")
+cases.append(("CASE 3. 제약조건 설정 + UPSERT", "성공", n3, "데이터 추가 후 재실행 시 갱신됨"))
+
+print(f"{'방식':<25}{'결과':<10}{'행수':>10} - 설명")
+for name, res, n, desc in cases:
+    print(f"{name:<25}{res:<10}{n:>10} {desc}")
+
+"""
+    CASE 1. 제약 조건이 없을 경우, 오류도 없음!
+    --> 중복해서 무한하게 데이터가 추가될 수 있음..
+    나중에 집계 시 이상한 결과를 도출할 수 있고, 되돌리고 싶어도.. 쉽지 않음
+
+    CASE 2. 제약 조건을 설정하는 경우, 중복은 막을 수 있음. 재실행 불가함!
+
+    CASE 3. UPSERT 를 사용하면 위의 문제들을 해결할 수 있음!
+    --> 데이터가 있으면 갱신, 없으면 새로 추가!
+"""
+# ===================================
+print('=' * 60)
+"""
+    신규/갱신 건수를 실행 전, 후의 전체 행수를 비교해서 기록
+    * 실행 후 행수 - 실행 전 행수 => 신규 건수
+"""
+
+def upsert_with_stats(table, data, chunk=1000):
+    """ 청크마다 커밋하면서 신규, 갱신 건수를 집계하는 함수 """
+    start = time.perf_counter()
+
+    before_count = count(table)
+
+    for i in range(0, len(data), chunk):
+        part = data[i:i+chunk]
+
+        with conn.cursor() as cur:
+            cur.executemany(UPSERT.format(t=table), part)
+        conn.commit()
+
+    after_count = count(table)
+
+    add_count = after_count - before_count
+    update_count = len(data) - add_count
+
+    # (추가 건수, 갱신 건수, 실행 시간) 반환
+    return add_count, update_count, time.perf_counter() - start
+
+make_table("t_stats", unique=True)
+
+a1, u1, t1 = upsert_with_stats("t_stats", rows)
+print(f"\n [적재] t_stats (1회차)")
+print(f"   입력    {len(rows)}행")
+print(f"   신규    {a1}행")
+print(f"   갱신    {u1}행")
+print(f"   시간    {t1:.2f}")
+
+a2, u2, t2 = upsert_with_stats("t_stats", rows)
+print(f"\n [적재] t_stats (2회차 - 동일데이터)")
+print(f"   입력    {len(rows)}행")
+print(f"   신규    {a2}행")
+print(f"   갱신    {u2}행")
+print(f"   시간    {t2:.2f}")
