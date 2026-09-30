@@ -88,7 +88,8 @@ results.append(("2. executemany", t2, count_rows()))
 # start = time.perf_counter()
 
 # sample.to_sql("daily_price", engine, if_exists="append", index=False,
-#               method="multi", chunksize=500)
+#               chunksize=500)
+# --> method="multi" 옵션은 오라클 지원 x
 # t4 = time.perf_counter() - start
 
 # results.append(("4. to_sql (multi)", t4, count_rows()))
