@@ -8,7 +8,7 @@
 
 import time
 
-from config import connect, CHUNK_SIZE
+from .config import connect, CHUNK_SIZE
 
 # DB에 저장할 컬럼 순서
 COLS = ["code","date","open","high","low","close","volume","change","changeRate"]
@@ -128,4 +128,40 @@ def verify(df, logger):
         - 날짜 최소
         - 날짜 최대
     """
-    pass
+    conn = connect()
+
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT COUNT(*),
+                   COUNT(DISTINCT code),
+                   SUM(close),
+                   MIN("date"),
+                   MAX("date")
+             FROM daily_price
+        """)
+        row = cur.fetchone()
+    conn.close()
+
+    n, codes, close_sum, min_d, max_d = row
+
+    def to_date_str(v):
+        """ 전달된 datetime 데이터의 날짜만 추출하고 문자열로 반환 """
+        return str(v.date()) if hasattr(v, "date") else str(v)
+
+    # {"검증항목_이름": (df기준_결과, db기준_결과), ..}
+    checks = {
+        "행 수": (len(df), n),
+        "종목 수": (df["code"].nunique(),  codes),
+        "종가 합계": (int(df["close"].sum()), int(close_sum)),
+        "최소 날짜": (str(df["date"].min().date()), to_date_str(min_d)),
+        "최대 날짜": (str(df["date"].max().date()), to_date_str(max_d)),
+    }
+
+    all_ok = True
+    for name, (exp, act) in checks.items():
+        ok = str(exp) == str(act)
+        all_ok &= ok
+
+        logger.info(f"  {'OK  ' if ok else 'FAIL'} {name:<12} {exp} / {act} ")
+
+    return all_ok
