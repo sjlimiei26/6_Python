@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 from _config import path, prices_path, ENCODING
 
+SEED = 42
+
 def load_merged():
     """ prices, companies, sectors를 결합하여 반환 """
     prices = pd.read_csv(prices_path(),
